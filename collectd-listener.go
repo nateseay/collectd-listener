@@ -70,37 +70,40 @@ func parse_args() args_struct{
   var args args_struct
   args.udp_port = flag.Int("udp-port", 8096, "UDP port to listen for collectd data" )
   args.typesdb_path = flag.String("typesdb-path", "./typedb", "Path to the collectd typesdb file")
-  args.log_level = flag.Int("log_level", 4, "Log level, 1-4. 1 is least verbose, 4 is most")
+  args.log_level = flag.Int("log-level", 4, "Log level, 1-4. 1 is least verbose, 4 is most")
   flag.Parse()
   return args
 }
 
 func check_error(logger logger_struct, err error){
   if err != nil {
-    logger.Error("Error! ", err)
+    logger.Error.Println("Error! ", err)
+    os.Exit(1)
   }
 }
 
 func run_server(logger logger_struct,
-                args arg_struct) {
+                args args_struct) {
   /* Lets prepare a address at any address at port 10001*/
-  logging.Info(Sprintf("Preparing to bind to %v", *args.udp_port)
-  ServerAddr,err := net.ResolveUDPAddr("udp",Sprintf(":%v", *args.udp_port))
-  CheckError(logger, err)
+  logger.Info.Println(fmt.Sprintf("Preparing to bind to %v", *args.udp_port))
+  ServerAddr,err := net.ResolveUDPAddr("udp",fmt.Sprintf(":%v", *args.udp_port))
+  check_error(logger, err)
 
   /* Now listen at selected port */
   ServerConn, err := net.ListenUDP("udp", ServerAddr)
-  CheckError(logger, err)
+  check_error(logger, err)
   defer ServerConn.Close()
+
+  logger.Info.Println(fmt.Sprintf("Listening at %v", *args.udp_port))
 
   buf := make([]byte, 1024)
 
   for {
       n,addr,err := ServerConn.ReadFromUDP(buf)
-      logging.Info("Received ",string(buf[0:n]), " from ",addr)
+      logger.Info.Println("Received ",string(buf[0:n]), " from ",addr)
 
       if err != nil {
-          fmt.Println("Error: ",err)
+          logger.Error.Println("Error: ",err)
       }
   }
 
@@ -112,5 +115,5 @@ func main(){
   logger.Info.Println("[Config] udp-port:", *args.udp_port)
   logger.Info.Println("[Config] typedb_path:", *args.typesdb_path)
   logger.Info.Println("[Config] log_level:", *args.log_level)
-
+  run_server(logger, args)
 }

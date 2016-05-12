@@ -8,6 +8,8 @@ import (
   "io"
   "fmt"
   "net"
+  "github.com/nateseay/collectd-listener/parse"
+  //"github.com/nateseay/collectd-listener/logging"
 )
 
 type args_struct struct {
@@ -27,20 +29,21 @@ func log_init(log_level int) logger_struct{
   var logger logger_struct
   var errorHandle, warningHandle, infoHandle, traceHandle io.Writer
   errorHandle = os.Stderr
-  if (log_level >= 2){
+
+  switch log_level {
+  case 2:
     warningHandle = os.Stdout
-  } else {
-    warningHandle = ioutil.Discard
-  }
-  if (log_level >= 3){
-    infoHandle = os.Stdout
-  } else {
     infoHandle = ioutil.Discard
-  }
-  if (log_level >= 4){
-    traceHandle = os.Stdout
-  } else {
     traceHandle = ioutil.Discard
+  case 3:
+    warningHandle = os.Stdout
+    infoHandle = os.Stdout
+    traceHandle = ioutil.Discard
+  default:
+    // fall back to all logging on
+    warningHandle = os.Stdout
+    infoHandle = os.Stdout
+    traceHandle = os.Stdout
   }
 
   logger.Trace = log.New(traceHandle,
@@ -70,7 +73,7 @@ func parse_args() args_struct{
   var args args_struct
   args.udp_port = flag.Int("udp-port", 8096, "UDP port to listen for collectd data" )
   args.typesdb_path = flag.String("typesdb-path", "./typedb", "Path to the collectd typesdb file")
-  args.log_level = flag.Int("log-level", 4, "Log level, 1-4. 1 is least verbose, 4 is most")
+  args.log_level = flag.Int("log-level", 2, "Log level, 1-4. 1 is least verbose, 4 is most")
   flag.Parse()
   return args
 }
@@ -101,10 +104,10 @@ func run_server(logger logger_struct,
   for {
       n,addr,err := ServerConn.ReadFromUDP(buf)
       logger.Info.Println("Received ",string(buf[0:n]), " from ",addr)
-
       if err != nil {
           logger.Error.Println("Error: ",err)
       }
+      collectdparse.ParseBuffer(buf)
   }
 
 }

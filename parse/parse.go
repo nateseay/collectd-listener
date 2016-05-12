@@ -5,14 +5,14 @@
 package parse
 
 import (
-  "fmt"
   "bytes"
+  "github.com/nateseay/collectd-listener/logging"
 )
 
-func ParseBuffer ( logger logger_struct,
+func ParseBuffer ( logger logging.LoggerStruct,
                     buf []byte ) {
   logger.Trace.Println("In ParseBuffer")
   // create a reader
-  reader := bytes.NewReader(byte)
+  reader := bytes.NewReader(buf)
   logger.Trace.Println(reader.Len())
 }

@@ -1,72 +1,18 @@
 package main
 
 import (
-  "flag"
-  "log"
   "os"
-  "io/ioutil"
-  "io"
   "fmt"
   "net"
+  "flag"
   "github.com/nateseay/collectd-listener/parse"
-  //"github.com/nateseay/collectd-listener/logging"
+  "github.com/nateseay/collectd-listener/logging"
 )
 
 type args_struct struct {
   udp_port *int
   typesdb_path *string
   log_level *int
-}
-
-type logger_struct struct {
-  Trace *log.Logger
-  Info *log.Logger
-  Warning *log.Logger
-  Error *log.Logger
-}
-
-func log_init(log_level int) logger_struct{
-  var logger logger_struct
-  var errorHandle, warningHandle, infoHandle, traceHandle io.Writer
-  errorHandle = os.Stderr
-
-  switch log_level {
-  case 2:
-    warningHandle = os.Stdout
-    infoHandle = ioutil.Discard
-    traceHandle = ioutil.Discard
-  case 3:
-    warningHandle = os.Stdout
-    infoHandle = os.Stdout
-    traceHandle = ioutil.Discard
-  default:
-    // fall back to all logging on
-    warningHandle = os.Stdout
-    infoHandle = os.Stdout
-    traceHandle = os.Stdout
-  }
-
-  logger.Trace = log.New(traceHandle,
-      "TRACE: ",
-      log.Ldate|log.Ltime|log.Lshortfile)
-
-  logger.Info = log.New(infoHandle,
-      "INFO: ",
-      log.Ldate|log.Ltime|log.Lshortfile)
-
-  logger.Warning = log.New(warningHandle,
-      "WARNING: ",
-      log.Ldate|log.Ltime|log.Lshortfile)
-
-  logger.Error = log.New(errorHandle,
-      "ERROR: ",
-      log.Ldate|log.Ltime|log.Lshortfile)
-
-  logger.Error.Println("Logger initialized")
-  logger.Warning.Println("Logger initialized")
-  logger.Info.Println("Logger initialized")
-  logger.Trace.Println("Logger initialized")
-  return logger
 }
 
 func parse_args() args_struct{
@@ -78,14 +24,14 @@ func parse_args() args_struct{
   return args
 }
 
-func check_error(logger logger_struct, err error){
+func check_error(logger logging.LoggerStruct, err error){
   if err != nil {
     logger.Error.Println("Error! ", err)
     os.Exit(1)
   }
 }
 
-func run_server(logger logger_struct,
+func run_server(logger logging.LoggerStruct,
                 args args_struct) {
   /* Lets prepare a address at any address at port 10001*/
   logger.Info.Println(fmt.Sprintf("Preparing to bind to %v", *args.udp_port))
@@ -107,14 +53,14 @@ func run_server(logger logger_struct,
       if err != nil {
           logger.Error.Println("Error: ",err)
       }
-      collectdparse.ParseBuffer(buf)
+      parse.ParseBuffer(logger, buf)
   }
 
 }
 
 func main(){
   args := parse_args()
-  logger := log_init(*args.log_level)
+  logger := logging.LogInit(*args.log_level)
   logger.Info.Println("[Config] udp-port:", *args.udp_port)
   logger.Info.Println("[Config] typedb_path:", *args.typesdb_path)
   logger.Info.Println("[Config] log_level:", *args.log_level)

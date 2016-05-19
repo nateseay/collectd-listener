@@ -49,7 +49,7 @@ func run_server(logger logging.LoggerStruct,
 
   for {
       n,addr,err := ServerConn.ReadFromUDP(buf)
-      logger.Info.Println("Received ",string(buf[0:n]), " from ",addr)
+      logger.Info.Println(fmt.Sprintf("Received data from %v, length of %v", addr, n))
       if err != nil {
           logger.Error.Println("Error: ",err)
       }
